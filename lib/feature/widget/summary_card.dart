@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 class SummaryCard extends StatelessWidget {
+  final String text;
   final Color backgroundColor;
   final Color textColor;
   final VoidCallback onTap;
-  const new({super.key, required this.backgroundColor, required this.textColor, required this.onTap});
+  const new({super.key, required this.text, required this.backgroundColor, required this.textColor, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +18,7 @@ class SummaryCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(15)
         ),
         child: Center(
-          child: Text("150000 ks", style: TextTheme.of(context).headlineSmall?.copyWith(color: textColor))
+          child: Text(text, style: TextTheme.of(context).headlineSmall?.copyWith(color: textColor))
         ),
       ),
     );

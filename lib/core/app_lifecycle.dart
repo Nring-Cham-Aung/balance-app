@@ -1,12 +1,13 @@
 import 'dart:async';
 
 import 'package:balance/feature/category/model/category_model.dart';
+import 'package:balance/feature/model/month_data_model.dart';
 
 class AppLifecycle {
-  DateTime _selectedMonth = DateTime.now();
-  DateTime get selectedMonth => _selectedMonth;
-  final _dateControlelr = StreamController<DateTime>();
-  Stream<DateTime> get monthStream => _dateControlelr.stream;
+  static MonthDataModel _monthDataModel = MonthDataModel(month: DateTime.now(), income: 0, expense: 0);
+  MonthDataModel get monthDataModel => _monthDataModel;
+  final _monthDataControlelr = StreamController<MonthDataModel>();
+  Stream<MonthDataModel> get monthDataStream => _monthDataControlelr.stream;
 
   final _categoryController = StreamController<List<CategoryModel>>();
   Stream<List<CategoryModel>> get categoryStream => _categoryController.stream;
@@ -15,9 +16,17 @@ class AppLifecycle {
     _categoryController.add(data);
   }
 
-  void setMonth(DateTime dateTime){
-    _selectedMonth = dateTime;
-    _dateControlelr.add(_selectedMonth);
+  void refreshMonthDataModel(MonthDataModel dataModel){
+    _monthDataModel = dataModel;
+    _monthDataControlelr.add(dataModel);
+  }
+
+
+  final _balanceController = StreamController<int>();
+  Stream<int> get balance => _balanceController.stream;
+
+  void setBalance(int balance){
+    _balanceController.add(balance);
   }
   
 

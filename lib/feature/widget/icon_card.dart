@@ -18,10 +18,10 @@ class IconCard extends StatelessWidget {
           color: Theme.of(context).colorScheme.surfaceContainer,
           borderRadius: BorderRadius.circular(12)
         ),
-        width: 90,
+        width: 120,
         child: Column(children: [
-          Icon(IconMapper.icon(iconCode)),
-          Text(title)
+          Icon(IconMapper.icon(iconCode), size: 40, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),),
+          Text(title, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis,)
         ],)
       
       ),

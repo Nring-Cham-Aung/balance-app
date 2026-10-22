@@ -12,8 +12,7 @@ List<String> dbSchema = [
     title TEXT NOT NULL,
     amount INTEGER NOT NULL,
     date TEXT NOT NULL,
-    type TEXT NOT NULL,
-    category_id INTEGER
+    type TEXT NOT NULL
   )
   '''
 ];

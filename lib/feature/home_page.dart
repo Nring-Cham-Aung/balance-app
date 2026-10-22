@@ -1,8 +1,13 @@
 
+import 'dart:async';
+
 import 'package:balance/core/app_lifecycle.dart';
 import 'package:balance/feature/category/category_from_page.dart';
 import 'package:balance/feature/category/category_repository.dart';
 import 'package:balance/feature/home_repository.dart';
+import 'package:balance/feature/income/income_form_page.dart';
+import 'package:balance/feature/income/income_repository.dart';
+import 'package:balance/feature/model/month_data_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -12,10 +17,31 @@ import 'category/model/category_model.dart';
 import 'widget/icon_card.dart';
 import 'widget/summary_card.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   final AppLifecycle lifecycle;
   final HomeRepository repo;
   const new({super.key, required this.lifecycle, required this.repo});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(initialize());
+  }
+
+  Future<void> initialize()async{
+   await refreshBalance();
+   await refreshSummary(widget.lifecycle.monthDataModel.month);
+   await refreshCategory();
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -31,66 +57,78 @@ class HomePage extends StatelessWidget {
               expandedHeight: 200,
               collapsedHeight: 80,
               actions: [
-                Text("45000 ks", style: TextTheme.of(context).titleMedium,),
-                IconButton(onPressed: (){}, icon: Icon(Icons.add))
+                StreamBuilder(
+                  stream: widget.lifecycle.balance,
+                  builder: (context, asyncSnapshot) {
+                    final amt = asyncSnapshot.hasData? asyncSnapshot.data! : 0;
+                    return Text("$amt ks", style: TextTheme.of(context).titleMedium,);
+                  }
+                ),
+                IconButton(onPressed: () => _showIncomeForm(context), icon: Icon(Icons.add))
               ],
               flexibleSpace: FlexibleSpaceBar(
-                background: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 10),
-                        child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadiusGeometry.circular(15)
+                background: StreamBuilder(
+                  stream: widget.lifecycle.monthDataStream,
+                  builder: (context, asyncSnapshot) {
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadiusGeometry.circular(15)
+                                ),
+                                side: BorderSide(color: color.primary)
+                              ),
+                              onPressed: ()=> _selectMonth(context),
+                              icon: Icon(Icons.date_range),
+                              label: Text(
+                                DateFormat('y MMMM')
+                                .format(widget.lifecycle.monthDataModel.month),
+                                style: TextTheme.of(context).titleMedium?.copyWith(color: color.primary)
+                              ),
                             ),
-                            side: BorderSide(color: color.primary)
                           ),
-                          onPressed: ()=> _selectMonth(context),
-                          icon: Icon(Icons.date_range),
-                          label: StreamBuilder(
-                            stream: lifecycle.monthStream,
-                            builder: (context, asyncSnapshot) {
-                              return Text(DateFormat('y MMMM').format(lifecycle.selectedMonth), style: TextTheme.of(context).titleMedium?.copyWith(color: color.primary));
-                            }
-                          )
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      height: 60,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: SummaryCard(
-                                backgroundColor: color.primaryContainer,
-                                textColor: color.onPrimaryContainer,
-                                onTap: (){
-                                  print("Clicked form Income");
-                                },
-                              ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          height: 60,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: SummaryCard(
+                                    text: "${widget.lifecycle.monthDataModel.income} ks",
+                                    backgroundColor: color.primaryContainer,
+                                    textColor: color.onPrimaryContainer,
+                                    onTap: (){
+                                      print("Clicked form Income");
+                                    },
+                                  ),
+                                ),
+                                VerticalDivider(color: color.secondary),
+                                Expanded(
+                                  child: SummaryCard(
+                                    text: "${widget.lifecycle.monthDataModel.expense} ks",
+                                    backgroundColor: color.tertiaryContainer,
+                                    textColor: color.onTertiaryContainer,
+                                    onTap: (){
+                                      print("Clicked form Expense");
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
-                            VerticalDivider(color: color.secondary),
-                            Expanded(
-                              child: SummaryCard(
-                                backgroundColor: color.tertiaryContainer,
-                                textColor: color.onTertiaryContainer,
-                                onTap: (){
-                                  print("Clicked form Expense");
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  ],
+                          ),
+                        )
+                      ],
+                    );
+                  }
                 ),
               ),
             ),
@@ -99,7 +137,7 @@ class HomePage extends StatelessWidget {
                 const SizedBox(height: 30),
                 Center(
                   child: StreamBuilder(
-                    stream: lifecycle.categoryStream,
+                    stream: widget.lifecycle.categoryStream,
                     builder: (context, asyncSnapshot) {
                       final List<CategoryModel> data = asyncSnapshot.hasData? asyncSnapshot.data! : [];
                       return Wrap(
@@ -123,10 +161,7 @@ class HomePage extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: ()async{
           var result = await Navigator.push(context, CupertinoPageRoute(builder: (context)=> CategoryFromPage(repo: CategoryRepository())));
-          if(result is bool && result){
-            final data = await repo.getCategories();
-            lifecycle.refreshCategory(data);
-          }
+          if(result is bool && result) refreshCategory();
         },
         child: Icon(Icons.add)
       ),
@@ -135,9 +170,34 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Future<void> _selectMonth(BuildContext context)async{
-    DateTime? value = await showMonthPicker(context: context, initialDate: lifecycle.selectedMonth);
-    if(value == null) return;
-    lifecycle.setMonth(value);
+
+  Future<void> refreshCategory()async{
+    final data = await widget.repo.getCategories();
+    widget.lifecycle.refreshCategory(data);
   }
+
+  Future<void> refreshBalance()async{
+    widget.lifecycle.setBalance(await widget.repo.getBalance());
+  }
+
+  Future<void> _selectMonth(BuildContext context)async{
+    DateTime? value = await showMonthPicker(context: context, initialDate: widget.lifecycle.monthDataModel.month);
+    if(value == null) return;
+    refreshSummary(value);
+  }
+
+  Future<void> refreshSummary(DateTime value)async{
+    final dataList = await widget.repo.getSummary(value);
+    widget.lifecycle.refreshMonthDataModel(MonthDataModel(month: value, income: dataList.first, expense: dataList.last));
+  }
+
+  Future<void> _showIncomeForm(BuildContext context)async{
+    final result = await Navigator.push(context, CupertinoPageRoute(builder: (context)=> IncomeFormPage(repo: IncomeRepository())));
+    if(result != null){
+      refreshBalance();
+      refreshSummary(widget.lifecycle.monthDataModel.month);
+    }
+  }
+
+
 }
