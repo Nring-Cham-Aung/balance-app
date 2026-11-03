@@ -4,7 +4,11 @@ import 'dart:async';
 import 'package:balance/core/app_lifecycle.dart';
 import 'package:balance/feature/category/category_from_page.dart';
 import 'package:balance/feature/category/category_repository.dart';
+import 'package:balance/feature/expense/expense_details.dart';
+import 'package:balance/feature/expense/expense_form_page.dart';
+import 'package:balance/feature/expense/expense_repository.dart';
 import 'package:balance/feature/home_repository.dart';
+import 'package:balance/feature/income/income_details.dart';
 import 'package:balance/feature/income/income_form_page.dart';
 import 'package:balance/feature/income/income_repository.dart';
 import 'package:balance/feature/model/month_data_model.dart';
@@ -64,7 +68,7 @@ class _HomePageState extends State<HomePage> {
                     return Text("$amt ks", style: TextTheme.of(context).titleMedium,);
                   }
                 ),
-                IconButton(onPressed: () => _showIncomeForm(context), icon: Icon(Icons.add))
+                IconButton(onPressed: _showIncomeForm, icon: Icon(Icons.add))
               ],
               flexibleSpace: FlexibleSpaceBar(
                 background: StreamBuilder(
@@ -106,9 +110,7 @@ class _HomePageState extends State<HomePage> {
                                     text: "${widget.lifecycle.monthDataModel.income} ks",
                                     backgroundColor: color.primaryContainer,
                                     textColor: color.onPrimaryContainer,
-                                    onTap: (){
-                                      print("Clicked form Income");
-                                    },
+                                    onTap: ()=>_go(IncomeDetails(repo: IncomeRepository(), date: widget.lifecycle.monthDataModel.month)),
                                   ),
                                 ),
                                 VerticalDivider(color: color.secondary),
@@ -117,9 +119,7 @@ class _HomePageState extends State<HomePage> {
                                     text: "${widget.lifecycle.monthDataModel.expense} ks",
                                     backgroundColor: color.tertiaryContainer,
                                     textColor: color.onTertiaryContainer,
-                                    onTap: (){
-                                      print("Clicked form Expense");
-                                    },
+                                    onTap: ()=>_go(ExpenseDetails(repo: ExpenseRepository(), date: widget.lifecycle.monthDataModel.month)),
                                   ),
                                 ),
                               ],
@@ -146,7 +146,8 @@ class _HomePageState extends State<HomePage> {
                         children: data.map((e)=>IconCard(
                           iconCode: e.iconCode,
                           title: e.name,
-                          onTap: (){})
+                          onTap: ()=>_goExpense(e)
+                        )
                         ).toList(),
                       );
                     }
@@ -191,12 +192,25 @@ class _HomePageState extends State<HomePage> {
     widget.lifecycle.refreshMonthDataModel(MonthDataModel(month: value, income: dataList.first, expense: dataList.last));
   }
 
-  Future<void> _showIncomeForm(BuildContext context)async{
+  Future<void> _showIncomeForm()async{
     final result = await Navigator.push(context, CupertinoPageRoute(builder: (context)=> IncomeFormPage(repo: IncomeRepository())));
     if(result != null){
       refreshBalance();
       refreshSummary(widget.lifecycle.monthDataModel.month);
     }
+  }
+
+  Future<void> _goExpense(CategoryModel category)async{
+    final result = await Navigator.push(context, CupertinoPageRoute(builder: (context)=> ExpenseFormPage(repo: ExpenseRepository(), category: category)));
+    if(result != null){
+      refreshBalance();
+      refreshSummary(widget.lifecycle.monthDataModel.month);
+    }
+  }
+
+
+  void _go(Widget page){
+    Navigator.push(context, CupertinoPageRoute(builder: (_)=>page));
   }
 
 
