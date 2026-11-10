@@ -3,16 +3,12 @@ import 'package:balance/feature/model/balance_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class ExpenseDetails extends StatefulWidget {
+class ExpenseDetails extends StatelessWidget {
   final ExpenseRepository repo;
   final DateTime date;
-  const new({super.key, required this.repo, required this.date});
-
-  @override
-  State<ExpenseDetails> createState() => _ExpenseDetailsState();
-}
-
-class _ExpenseDetailsState extends State<ExpenseDetails> {
+  final Stream<List<BalanceModel>> expenseStream;
+  final void Function(List<BalanceModel> list) updated;
+  const new({super.key, required this.repo, required this.date, required this.expenseStream, required this.updated});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +31,7 @@ class _ExpenseDetailsState extends State<ExpenseDetails> {
                   padding: EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     children: [
-                      Text(DateFormat('y MMMM').format(widget.date), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),),
+                      Text(DateFormat('y MMMM').format(date), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),),
                       SizedBox(
                         width: 150,
                         child: Divider(endIndent: 20,),
@@ -50,16 +46,24 @@ class _ExpenseDetailsState extends State<ExpenseDetails> {
           SliverList.list(
             children: [
               FutureBuilder(
-                future: widget.repo.expenseList(widget.date, title),
-                builder: (_, snapshot)=> !snapshot.hasData
+                future: repo.expenseList(date),
+                builder: (ctx, snapshot1)=> !snapshot1.hasData
                 ? const Loader()
-                : snapshot.data!.isEmpty
-                ? empty()
+                : snapshot1.data!.isEmpty
+                ? empty(ctx)
                 : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    FilterList(list: snapshot.data!, onSelected: _onSelected,),
-                    ...snapshot.data!.map((e)=>listItem(e))
+                    FilterList(list: snapshot1.data!, onSelected: _onSelected),
+                    StreamBuilder(
+                      stream: expenseStream,
+                      builder: (_, snapshot2){
+                        final data = snapshot2.data?? snapshot1.data?? [];
+                        return Column(
+                          children: data.map((e)=>listItem(e)).toList(),
+                        );
+                      } 
+                    ),
                   ],
                 )
               )
@@ -72,7 +76,6 @@ class _ExpenseDetailsState extends State<ExpenseDetails> {
     );
   }
 
-
   Widget listItem(BalanceModel model)=>
   ListTile(
     contentPadding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
@@ -82,7 +85,7 @@ class _ExpenseDetailsState extends State<ExpenseDetails> {
     trailing: Text(model.date),
   );
 
-  Widget empty(){
+  Widget empty(BuildContext context){
     final size = MediaQuery.of(context).size;
     return SizedBox(
       height: size.height,
@@ -101,16 +104,9 @@ class _ExpenseDetailsState extends State<ExpenseDetails> {
     );
   }
 
-
-  String? title;
-
-  Future<void> _onSelected(String? v)async{
-   title = v;
-   setState(() {});
-  }
-
+  Future<void> _onSelected(String? v) async => 
+  updated(await repo.expenseList(date, v));
 }
-
 
 class Loader extends StatelessWidget {
   const new({super.key});

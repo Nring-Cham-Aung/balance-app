@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:balance/feature/category/model/category_model.dart';
+import 'package:balance/feature/model/balance_model.dart';
 import 'package:balance/feature/model/month_data_model.dart';
 
 class AppLifecycle {
@@ -24,10 +25,11 @@ class AppLifecycle {
 
   final _balanceController = StreamController<int>();
   Stream<int> get balance => _balanceController.stream;
+  void setBalance(int balance) => _balanceController.add(balance);
 
-  void setBalance(int balance){
-    _balanceController.add(balance);
-  }
+  final _expenseController = StreamController<List<BalanceModel>>.broadcast();
+  Stream<List<BalanceModel>> get expenseList => _expenseController.stream;
+  void refreshExpenseList(List<BalanceModel> lsit) => _expenseController.add(lsit);
   
 
 

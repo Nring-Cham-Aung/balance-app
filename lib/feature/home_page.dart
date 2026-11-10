@@ -119,7 +119,12 @@ class _HomePageState extends State<HomePage> {
                                     text: "${widget.lifecycle.monthDataModel.expense} ks",
                                     backgroundColor: color.tertiaryContainer,
                                     textColor: color.onTertiaryContainer,
-                                    onTap: ()=>_go(ExpenseDetails(repo: ExpenseRepository(), date: widget.lifecycle.monthDataModel.month)),
+                                    onTap: ()=>_go(ExpenseDetails(
+                                      repo: ExpenseRepository(),
+                                      date: widget.lifecycle.monthDataModel.month,
+                                      expenseStream: widget.lifecycle.expenseList,
+                                      updated: widget.lifecycle.refreshExpenseList,
+                                    )),
                                   ),
                                 ),
                               ],
